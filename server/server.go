@@ -15,18 +15,22 @@ type Client struct {
 	conn net.Conn
 	name string
 }
+
 const maxConnections = 10
 
 var (
 	mutex       sync.Mutex
 	messageLog  []string
 	connections int
-	clients = make(map[net.Conn]*Client)
+	clients     = make(map[net.Conn]*Client)
 )
 
-/*Handles setting up and
- Starting the TCP server
- And managing the connections*/
+/*
+Handles setting up and
+
+	Starting the TCP server
+	And managing the connections
+*/
 func StartServer(port string) {
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
@@ -53,13 +57,14 @@ func StartServer(port string) {
 	}
 }
 
-// Connects to the Server using TCP 
+// Connects to the Server using TCP
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	// print welcome message and ask for client name and handle empty name case
 	conn.Write([]byte(welcomeMessage()))
 	conn.Write([]byte("\n[ENTER YOUR NAME]:"))
+
 	nameReader := bufio.NewReader(conn)
 	name, err := nameReader.ReadString('\n')
 	if err != nil || strings.TrimSpace(name) == "" {
@@ -74,7 +79,7 @@ func handleConnection(conn net.Conn) {
 	clients[conn] = client
 	connections++
 	mutex.Unlock()
-	
+
 	broadcast(fmt.Sprintf("%s has joined our chat...", name), conn)
 
 	sendPreviousMessages(conn)
@@ -111,7 +116,6 @@ func handleConnection(conn net.Conn) {
 	// Handle client disconnection
 	mutex.Lock()
 	delete(clients, conn)
-	//messageLog = append(messageLog, fmt.Sprintf("%s has left our chat...", name))
 	broadcast(fmt.Sprintf("%s has left our chat...", name), conn)
 	connections--
 	mutex.Unlock()
