@@ -68,7 +68,7 @@ func handleConnection(conn net.Conn) {
 	nameReader := bufio.NewReader(conn)
 	name, err := nameReader.ReadString('\n')
 	if err != nil || strings.TrimSpace(name) == "" {
-		conn.Write([]byte("Invalid name. Disconnecting...\n"))
+		conn.Write([]byte("Invalid name. Disconnected\n"))
 		return
 	}
 	name = strings.TrimSpace(name)
@@ -87,12 +87,20 @@ func handleConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 	for {
 		message, err := reader.ReadString('\n')
+
 		if err != nil {
 			break
 		}
+
 		message = strings.TrimSpace(message)
 		if message == "" {
-			continue
+			timestamp := time.Now().Format("2006-01-02 15:04:05")
+			otherClientsMessage := fmt.Sprintf("[%s][%s]: %s", timestamp, name, message)
+			for c, client := range clients {
+				if c != conn {
+					client.conn.Write([]byte(otherClientsMessage + "\n"))
+				}
+			}
 		}
 
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
